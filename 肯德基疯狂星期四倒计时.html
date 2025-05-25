@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>肯德基疯狂星期四倒计时</title>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  #current-time {
+    font-size: 40px;
+    position: absolute;
+    top: 20px;
+    width: 100%;
+  }
+
+  #countdown {
+    font-size: 32px;
+    margin-top: 50px;
+  }
+
+  #log-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 2px solid blue;
+    background-color: white;
+    color: blue;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  #log-btn:hover {
+    background-color: blue;
+    color: white;
+  }
+
+  .dark-mode #log-btn {
+    background-color: #333;
+    color: blue;
+  }
+
+  .dark-mode #log-btn:hover {
+    background-color: blue;
+    color: white;
+  }
+
+  #theme-selector {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 5px 10px;
+    font-size: 16px;
+    border: 2px solid blue;
+    border-radius: 10px;
+    background-color: white;
+    color: blue;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .dark-mode #theme-selector {
+    background-color: #333;
+    color: white;
+  }
+
+  #modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+    text-align: left;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transition: background-color 0.3s, color 0.3s;
+    overflow-x: hidden;
+  }
+
+  .dark-mode #modal-content {
+    background-color: #333;
+    color: white;
+  }
+
+  #close-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    background: none;
+    border: 2px solid red;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    color: red;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  #close-modal:hover {
+    background-color: red;
+    color: white;
+  }
+
+  .dark-mode {
+    background-color: #1e1e1e;
+    color: #ffffff;
+  }
+</style>
+</head>
+<body>
+<div id="current-time"></div>
+<div id="countdown"></div>
+
+<select id="theme-selector" onchange="changeTheme(this.value)">
+  <option value="system">🌗 跟随系统</option>
+  <option value="day">☀️ 日间模式</option>
+  <option value="night">🌙 暗黑模式</option>
+</select>
+
+<button id="log-btn" onclick="showModal()">更新日志</button>
+
+<div id="modal">
+  <div id="modal-content">
+    <button id="close-modal" onclick="closeModal()">×</button>
+    <h3>更新日志</h3>
+    <ul>
+      <li>2024-08-20 Ver 0.3<br>
+        1.更改计时样式<br>
+        2.添加日间/夜间模式<br>
+        3.添加更新日志<br>
+        4.移除了 Him<br>
+        <s>5.添加了一些未知bug（我是废物）</s><br>
+      </li> 
+      <li>2024-11-17 Ver 0.4<br>
+      1.现在暗黑/日间模式支持系统主题跟随和自动保存啦<br>
+      2.将切换模式改为下拉式菜单<br>
+      3.修复在暗黑模式下进入会闪烁一下的 bug<br>
+      <s>4.摸了一会小猫咪，并吃了一袋子零食</s><br>
+    </ul>
+  </div>
+</div>
+
+<script>
+  // 初始化主题
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    applyTheme(savedTheme);
+    document.getElementById('theme-selector').value = savedTheme;
+  }
+
+  // 应用主题
+  function applyTheme(theme) {
+    if (theme === 'system') {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.body.classList.toggle('dark-mode', isDark);
+    } else {
+      document.body.classList.toggle('dark-mode', theme === 'night');
+    }
+  }
+
+  // 主题切换事件
+  function changeTheme(theme) {
+    localStorage.setItem('theme', theme);
+    applyTheme(theme);
+  }
+
+  // 监听系统主题变化（仅在系统模式启用时生效）
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (localStorage.getItem('theme') === 'system') {
+      applyTheme('system');
+    }
+  });
+
+  // 页面加载时初始化
+  document.addEventListener('DOMContentLoaded', initTheme);
+
+  // 倒计时功能
+  function countdown() {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const daysUntilThursday = (4 - dayOfWeek + 7) % 7; // Calculate days to Thursday
+
+    // Get next Thursday
+    const nextThursday = new Date(now);
+    nextThursday.setDate(now.getDate() + daysUntilThursday);
+    nextThursday.setHours(0, 0, 0, 0); // Set time to midnight
+
+    const distance = nextThursday.getTime() - now.getTime();
+
+    if (distance <= 0) {
+      document.getElementById('countdown').innerHTML = '星期四到了，快去吃肯德基！';
+      return;
+    }
+
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    const countdownText = `距肯德基疯狂星期四还有<br>${daysUntilThursday} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
+    document.getElementById('countdown').innerHTML = countdownText;
+  }
+
+  setInterval(countdown, 1000);
+  countdown();
+
+  // 时间显示
+  function updateTime() {
+    const now = new Date();
+    const beijingDate = now.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+    const beijingTime = now.toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai' });
+
+    document.getElementById('current-time').innerHTML = `北京时间: ${beijingDate} ${beijingTime}`;
+  }
+
+  setInterval(updateTime, 1000);
+  updateTime();
+
+  // 模态框控制
+  function showModal() {
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+</script>
+</body>
+</html>
